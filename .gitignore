@@ -1,0 +1,6 @@
+**/__pycache__/
+**/har.egg-info/
+**/.ipynb_checkpoints/
+data/keypoints
+data/inputs
+
