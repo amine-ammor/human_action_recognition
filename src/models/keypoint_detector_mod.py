@@ -25,12 +25,13 @@ class KeyPointDetector(nn.Module):
                                 in zip(key_pts_per_detection["keypoints"],
                                        key_pts_per_detection["scores"]
                                        ,filtered_detection) if not(filtered)]
-        keypoints,scores =  list(zip(*res))
-        if len(scores) == 0:
+        if len(res) == 0:
             keypoints = torch.zeros(0,0,0)
             scores = torch.zeros(0)
-        keypoints = torch.stack(keypoints)[...,:2]
-        scores = torch.stack(scores)
+        else:
+            keypoints,scores =  list(zip(*res))
+            keypoints = torch.stack(keypoints)[...,:2]
+            scores = torch.stack(scores)
         return keypoints,scores
 
     def forward(self,batch):
