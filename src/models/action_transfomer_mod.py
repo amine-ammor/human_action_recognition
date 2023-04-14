@@ -34,7 +34,7 @@ class ActionTransformer(nn.Module):
                         dimension 2 indexes the keypoints (set of lamndmarks describins the detect person)
             batch_frames_valid (torch.tensor) : of shape (N,T) of bool type, where position (i,j)
                         indicates if object is detected or not on the frame
-
+            
             frames from which no detection is present , are such that the correponding slice at batch
             is filled with np.nan, 
         """
@@ -42,7 +42,6 @@ class ActionTransformer(nn.Module):
         embeddings = self.embedding_layer(batch)
 
         # remove frames with no detection
-
         # remove the tokens
 
         class_token_duplicated = self.class_token.repeat(embeddings.shape[0],1,1)
@@ -53,7 +52,8 @@ class ActionTransformer(nn.Module):
         full_embeddings = self.positionnal_encoder(full_embeddings)
 
         src_key_padding_mask=~batch_frames_valid
-        src_key_padding_mask = torch.concat([torch.ones((src_key_padding_mask.shape[0],1),dtype=torch.bool),src_key_padding_mask],1)
+        src_key_padding_mask = torch.concat([torch.zeros((src_key_padding_mask.shape[0],1),dtype=torch.bool),
+                                             src_key_padding_mask],1)
         output = self.transformer_encoder(full_embeddings,src_key_padding_mask=src_key_padding_mask)
 
         prediction = self.mlp(output[:,0])
