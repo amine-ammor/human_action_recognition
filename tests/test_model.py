@@ -1,30 +1,26 @@
 import pytest,torch
-from pathlib import Path
-from ploomber_engine.ipython import PloomberClient
 
-dir_file = Path(__file__).parent
+
 
 @pytest.fixture
-def path_training_setup():
-    path = dir_file.joinpath("../notebooks/training_setup.ipynb")
-    assert path.exists()
-    return path
+def random_input_sample(video_dataloader):
+    """for the model"""
+    assert type(video_dataloader.sampler) == torch.utils.data.sampler.RandomSampler
+    res = next(iter(video_dataloader))
+    return res
 
-@pytest.fixture
-def training_setup(path_training_setup):
-    client = PloomberClient.from_path(path_training_setup,cwd=Path("./"))
-    train_setup = client.get_namespace()
-    return train_setup
+def test_model_output(model,random_input_sample):
+    model = model.eval()
 
-@pytest.mark.temp
-def test_dummy(training_setup):
-    a = type(training_setup)
-    import pdb;pdb.set_trace()
+    batch,batch_frames_valid = random_input_sample
 
+    output = model(batch,batch_frames_valid)
 
-@pytest.mark.parametrize("input,batch_frames_valid",
-                         [(torch.rand(10,15,34),torch.ones((10,15),dtype=torch.bool))])
-def test_model_output(model,input,batch_frames_valid):
-    output = model(input,batch_frames_valid)
-    assert input.shape[2] == model.d_keypoints
-    assert output.shape == torch.Size([input.shape[0],model.nb_actions])
+    batch[~batch_frames_valid] = 10.0
+    output1 = model(batch,batch_frames_valid)
+
+    assert torch.all(output == output1),"masked frames should not interfere in the result"
+
+    assert batch.shape[2] == model.d_keypoints,"""tralling dimension of input, should be equal
+      to the number keypoints"""
+    assert output.shape == torch.Size([batch.shape[0],model.nb_actions])
