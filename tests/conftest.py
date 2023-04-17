@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 from ploomber_engine.ipython import PloomberClient
 
-from models import action_transfomer_mod 
+from action_transformer.models import action_transfomer_mod 
 
 dir_file = Path(__file__).parent
 
@@ -37,3 +37,9 @@ def video_dataloader(full_training_setup):
 def model():
     model = action_transfomer_mod.ActionTransformer(nhead=4,num_layers=4)
     return model
+
+# @pytest.fixture(scope="session")
+# def model_inference(model):
+#     model = model.eval()
+#     return model
+
