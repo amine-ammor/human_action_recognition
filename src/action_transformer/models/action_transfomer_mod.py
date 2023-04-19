@@ -52,8 +52,8 @@ class ActionTransformer(nn.Module):
         full_embeddings = self.positionnal_encoder(full_embeddings)
 
         src_key_padding_mask=~batch_frames_valid
-        src_key_padding_mask = torch.concat([torch.zeros((src_key_padding_mask.shape[0],1),dtype=torch.bool),
-                                             src_key_padding_mask],1)
+        class_token_mask = torch.zeros((src_key_padding_mask.shape[0],1),dtype=torch.bool,device=src_key_padding_mask.device)
+        src_key_padding_mask = torch.concat([class_token_mask,src_key_padding_mask],1)
         output = self.transformer_encoder(full_embeddings,src_key_padding_mask=src_key_padding_mask)
 
         prediction = self.mlp(output[:,0])
