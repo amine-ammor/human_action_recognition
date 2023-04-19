@@ -11,25 +11,19 @@ import abc
 
 class ModelHandler:
     batch_iter_print = 10
-    def __init__(self,model,optimizer,scheduler,
+    def __init__(self,model,optimizer,
                  data_loader,
-                 loss_batch_fn,
-                 metrics,
+                 loss_batch_fn,metrics,
                  extract_predictions,extract_targets,prepare_inputs,
-                 device,device_converter,train_else_val):
+                 device,train_else_val):
         """_summary_
 
         Args:
             model (nn.Module): should match the data_loader description
             optimizer (optim.optimizer.Optimizer): pytorch "Optimizer" object 
-            scheduler (optim.lr_scheduler.LRScheduler): pytorch "Scheduler" object 
             data_loader (data.dataDataLoader): pytorch dataloader
             loss_batch_fn (callable): loss function applied on the output of the model on a batch
             metrics : dictionnary of "Metric" object from the torchmetrics framework,
-
-            device_converter (callable): that convert a batch of data from one device to the other
-            (Remark, not necessarily all the data must be moved to the device, in order for the model
-            to be applied)
 
             device (str): device on which the training is done
             train_else_val (bool): if True apply gradient calculation and the optimizer,else
@@ -41,25 +35,27 @@ class ModelHandler:
         """
 
         self.device = device
-        self.model = model.to(self.device)
+        self.model = model
 
         self.data_loader = data_loader
 
         self.train_else_val = train_else_val
         self.optimizer = optimizer
-        self.scheduler = scheduler
         
         # callable to add
         
         self.loss_batch_fn = loss_batch_fn
         self.metrics = metrics
 
-        self.device_converter = device_converter
         self.extract_predictions = extract_predictions
         self.extract_targets = extract_targets
         self.prepare_inputs = prepare_inputs
 
 
+
+        self.model = self.model.to(self.device)
+        for (key,val) in self.metrics.items():
+            self.metrics[key] = val.to(device)
 
     def reset_metrics(self):
         for metric in self.metrics.values():
@@ -68,6 +64,13 @@ class ModelHandler:
     def reset_optimizer(self):
         self.optimizer = self.optimizer.__class__(self.model.parameters(), **self.optimizer.defaults)
 
+    def convert_to_device(self,batch):
+        """
+            move batch (each value of the dictionnary) to self.device
+        """
+        for key,val in batch.items():
+            batch[key] = val.to(self.device)
+        return batch
 
     def iterate_on_batch(self,batch):
         """_summary_
@@ -85,7 +88,8 @@ class ModelHandler:
         else:
             assert self.optimizer is None
 
-        batch = self.device_converter(batch,self.device)
+        batch = self.convert_to_device(batch)
+        
         inpt_model = self.prepare_inputs(batch)
 
         out_model = self.model(*inpt_model)
@@ -93,30 +97,40 @@ class ModelHandler:
 
         loss = self.loss_batch_fn(out_model,batch)
 
+        # out_model can be used in some case for the method extract_targets if 
+        
         preds = self.extract_predictions(out_model,batch)
         targets = self.extract_targets(out_model,batch) 
-        # out_model can be used in some case for the method extract_targets if 
 
-        [metric.update(preds,targets) for metric in self.metrics.values()]
-        
+        [metric.update(preds,targets) for name,metric in self.metrics.items() if name != "loss"]
+
         if self.train_else_val:
             loss.backward()
             self.optimizer.step()
         
         return loss,out_model
 
-    
-    def iterate_on_epoch(self,data_loader,train_else_val):
+    def print_metrics(self):
+        for name,metric in self.metrics.items():
+            print(f"value for metric {name} is :  {metric.compute()}")
+
+    def iterate_on_epoch(self):
         losses = []
-        outs_model = []
         self.reset_metrics()
-        for batch_idx,batch in enumerate(data_loader):
-            loss,out_model = self.iterate_on_batch(batch,batch_idx,train_else_val=train_else_val)
-            losses.append(loss)
-            outs_model.append(out_model)
+        for batch_idx,batch in enumerate(self.data_loader):
+            loss,out_model = self.iterate_on_batch(batch)
+            losses.append(float(loss))
+            # updating the streaming metrics
+
+            loss_agregator = self.metrics["loss"]
+            loss_agregator.update(loss,out_model)
+
+            #printing metric values once per while
             if batch_idx%self.batch_iter_print == 0:
-                for name,metric in self.metrics.items():
-                    print(f"value for metric {name} is :  {metric.compute()}")
+                self.print_metrics()
+            
+            # free the memory
+            del loss,out_model
 
         metrics_on_epoch = {name:metric.compute() for (name,metric) in self.metrics.items()}
         return metrics_on_epoch
