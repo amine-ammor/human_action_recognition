@@ -87,9 +87,9 @@ class VideoKeyPointDataset(Dataset):
                                                               max_number_of_frames=None)
         outputs.update(kpts=kpts,
                       is_detection_present=is_detection_present)
-        outputs["class_name"] = extract_class_name(path_file)
+        outputs["label"] = extract_class_name(path_file)
         if self.transform_labels is not None:
-            outputs["class_name"] = self.transform_labels(outputs["class_name"])
+            outputs["label"] = self.transform_labels(outputs["label"])
         return outputs
     
     def __len__(self):
