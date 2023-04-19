@@ -1,34 +1,44 @@
-import torch
+# import torch
+
+# from . import model_handler_mod
 
 
+# class ModelTrainer:
+#     def __init__(self,model_handler : model_handler_mod.ModelHandler,optimizer,scheduler):
+#         self.model_handler = model_handler
+#         self.optimizer = optimizer
+#         self.scheduler = scheduler
 
 
-class ModelTrainer:
+#     def reset_optimizer(self):
+#         self.optimizer = self.optimizer.__class__(self.model.parameters(), **self.optimizer.defaults)
 
-    def validate_on_batch(self,batch):
-        out = self.iterate_on_batch(batch,train_else_val=False)
-        return out
-
-    def train_on_batch(self,batch):
-        out = self.iterate_on_batch(batch,train_else_val=True)
-        return out
+#     def set_learning_rate(self,lr):
+#         for g in self.optimizer.param_groups:
+#             g['lr'] = lr
 
 
-def train_on_batch(self):
-    out = self.iterate_on_epoch(self.train_data_loader,train_else_val=True)
-    return out
+#     def train_on_batch(self,batch):
+#         self.optimizer.zero_grad()
+#         loss,out_model = self.model_handler.iterate_on_batch(batch,train_else_val=True)
+#         loss.backward()
+#         self.optimizer.step()
+#         return loss,out_model
 
 
-@torch.no_grad()
-def validate_on_epoch(self):
-    out = self.iterate_on_epoch(self.val_data_loader,train_else_val=False)
-    return out
-
-def set_learning_rate(self,lr):
-    for g in self.optimizer.param_groups:
-        g['lr'] = lr
-
-
+#     def train_on_epoch(self):
+#         losses = []
+#         # self.metric.reset()
+#         for batch_idx,batch in enumerate(self.train_data_loader):
+#             loss,nb_words = self.train_on_batch(batch,batch_idx)
+#             if batch_idx %100 == 0:
+#                 print(batch_idx,float(loss)/nb_words)
+#             if loss is not(None):
+#                 losses.append(loss)
+#                 nb_words_per_batch.append(nb_words)
+#         # metric_value = self.metric.compute()
+#         metric_value = None
+#         return losses,nb_words_per_batch,metric_value
 
             
     # def lr_range_test(self,min_lr_search,max_lr_search,size_experiments_step,cycle_schedule,method):
