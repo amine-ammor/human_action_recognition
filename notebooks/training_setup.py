@@ -227,11 +227,12 @@ metrics = {"accuracy":accuracy_metric,
 # +
 from action_transformer.model_handling import model_handler_mod
 import torch
+import copy
 device = "cuda" if torch.cuda.is_available() else "cpu" 
 trainer = model_handler_mod.ModelHandler(model,optimizer,
                                               train_video_dataloader,
                                                loss_batch_fn=loss_batch_fn,
-                                              metrics=metrics,
+                                              metrics=copy.deepcopy(metrics),
                                               extract_predictions=extract_predictions,
                                               extract_targets=extract_targets,
                                               prepare_inputs=prepare_inputs,
@@ -241,7 +242,7 @@ trainer = model_handler_mod.ModelHandler(model,optimizer,
 validator = model_handler_mod.ModelHandler(model,None,
                                               val_video_dataloader,
                                                loss_batch_fn=loss_batch_fn,
-                                              metrics=metrics,
+                                              metrics=copy.deepcopy(metrics),
                                               extract_predictions=extract_predictions,
                                               extract_targets=extract_targets,
                                               prepare_inputs=prepare_inputs,
