@@ -57,6 +57,10 @@ class ModelHandler:
         for (key,val) in self.metrics.items():
             self.metrics[key] = val.to(device)
 
+        if "loss" in self.metrics:
+            self.loss_agregator = self.metrics["loss"]
+
+
     def reset_metrics(self):
         for metric in self.metrics.values():
             metric.reset()
@@ -104,15 +108,23 @@ class ModelHandler:
 
         [metric.update(preds,targets) for name,metric in self.metrics.items() if name != "loss"]
 
+        if hasattr(self,"loss_agregator"):
+            self.loss_agregator.update(loss,out_model)
+        
         if self.train_else_val:
             loss.backward()
             self.optimizer.step()
         
         return loss,out_model
 
+    def get_metrics_vals(self):
+        """since beginning of epoch run"""
+        metrics_on_epoch = {name:metric.compute() for (name,metric) in self.metrics.items()}
+        return metrics_on_epoch
+    
     def print_metrics(self):
-        for name,metric in self.metrics.items():
-            print(f"value for metric {name} is :  {metric.compute()}")
+        for name,metric_val in self.get_metrics_vals().items():
+            print(f"value for metric {name} is :  {metric_val}")
 
     def iterate_on_epoch(self):
         losses = []
